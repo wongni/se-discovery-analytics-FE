@@ -147,7 +147,7 @@
         },
         deleteAnalytics() {
           this.selected.forEach(function(analytic) {
-            analyticsRef.child(analytic.name).remove()
+            analytic.name && analyticsRef.child(analytic.name).remove()
           })
           this.selected = []
         },
