@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons'
+        rel="stylesheet">
+  <link href="https://unpkg.com/vuetify/dist/vuetify.min.css"
+        rel="stylesheet">
+</head>
+
+<body>
+  <div id="app">
+    <v-app id="example-3"
+           toolbar>
+      <main>
+        <v-container fluid>
+          <!-- Analytics Table -->
+          <template>
+            <v-data-table :headers="headers"
+                          :items="items"
+                          v-model="selected"
+                          hide-actions
+                          selected-key="name"
+                          select-all
+                          class="elevation-1">
+              <template slot="items"
+                        scope="props">
+                <td>
+                  <v-checkbox primary
+                              hide-details
+                              v-model="props.selected"></v-checkbox>
+                </td>
+                <td>{{ props.item.name }}</td>
+                <td class="text-xs-right">{{ props.item.serial }}</td>
+                <td class="text-xs-right">{{ props.item.port }}</td>
+                <td class="text-xs-right">{{ props.item.algorithm }}</td>
+                <td class="text-xs-right">{{ props.item.parameters }}</td>
+                <td class="text-xs-right">{{ props.item.values }}</td>
+                <td class="text-xs-right">{{ props.item.events && props.item.events[props.item.events.length - 1].state }}</td>
+                <td class="text-xs-right">{{ props.item.events && getTimeAgo(props.item.events[props.item.events.length - 1].timestamp) }}</td>
+              </template>
+            </v-data-table>
+          </template>
+          <!-- New Analytic Form -->
+          <template>
+            <v-layout row
+                      wrap>
+              <v-flex xs3>
+                <v-subheader>Name</v-subheader>
+              </v-flex>
+              <v-flex xs9>
+                <v-text-field name="name"
+                              label="Analytics Name"
+                              v-model="newItem.name"
+                              :rules="[() => newItem.name && newItem.name.length > 0 && uniqueName || 'Please enter a unique name']"></v-text-field>
+              </v-flex>
+              <v-flex xs3>
+                <v-subheader>Serial#</v-subheader>
+              </v-flex>
+              <v-flex xs9>
+                <v-select :items="serials"
+                          v-model="newItem.serial"
+                          label="Select a Hub Serial Number"
+                          single-line
+                          bottom
+                          :rules="[() => newItem.serial && newItem.serial.length > 0 || 'Please select an option']"></v-select>
+              </v-flex>
+              <v-flex xs3>
+                <v-subheader>Port</v-subheader>
+              </v-flex>
+              <v-flex xs9>
+                <v-select :items="ports"
+                          v-model="newItem.port"
+                          label="Select a Hub Port"
+                          single-line
+                          bottom
+                          :rules="[() => newItem.port && newItem.port.length > 0 || 'Please select an option']"></v-select>
+              </v-flex>
+              <v-flex xs3>
+                <v-subheader>Algorithm</v-subheader>
+              </v-flex>
+              <v-flex xs9>
+                <v-select :items="algorithms"
+                          v-model="newItem.algorithm"
+                          label="Select an Algorithm"
+                          single-line
+                          bottom
+                          :rules="[() => newItem.algorithm && newItem.algorithm.length > 0 || 'Please select an option']"></v-select>
+              </v-flex>
+              <v-flex xs3>
+                <v-subheader>Parameters</v-subheader>
+              </v-flex>
+              <v-flex xs9>
+                <v-subheader>{{parameters}}</v-subheader>
+              </v-flex>
+              <v-flex xs3>
+                <v-subheader>Values</v-subheader>
+              </v-flex>
+              <v-flex xs9>
+                <v-text-field name="value"
+                              label="Comma separated numbers"
+                              v-model="newItem.values"
+                              :rules="[() => newItem.values && newItem.values.length > 0 || 'Please enter values']"></v-text-field>
+              </v-flex>
+            </v-layout>
+          </template>
+          <!-- Buttons -->
+          <template>
+            <div class="text-xs-center">
+              <v-btn error
+                     :disabled="selected.length === 0"
+                     @click="deleteAnalytics">Delete</v-btn>
+              <v-btn primary
+                     :disabled="!validated"
+                     @click="addAnalytic">Create</v-btn>
+            </div>
+          </template>
+        </v-container>
+      </main>
+    </v-app>
+  </div>
+
+  <script src="https://unpkg.com/vue/dist/vue.js"></script>
+  <script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
+  <script src="https://gstatic.com/firebasejs/4.0.0/firebase.js"></script>
+  <script src="https://unpkg.com/vuefire/dist/vuefire.js"></script>
+  <script src="https://rawgit.com/hustcc/timeago.js/master/dist/timeago.min.js"></script>
+  <script>
+    var db = firebase.initializeApp({
+      databaseURL: 'https://se-discovery-1.firebaseio.com/'
+    }).database()
+    var analyticsRef = db.ref('analytics')
+
+    new Vue({
+      el: '#app',
+      firebase: {
+        items: analyticsRef
+      },
+      methods: {
+        addAnalytic() {
+          this.newItem.parameters = this.parameters
+          analyticsRef.child(this.newItem.name).set(this.newItem)
+          this.newItem.name = ''
+          this.newItem.port = ''
+          this.newItem.algorithm = ''
+          this.newItem.values = ''
+        },
+        deleteAnalytics() {
+          this.selected.forEach(function(analytic) {
+            analyticsRef.child(analytic.name).remove()
+          })
+          this.selected = []
+        },
+        getTimeAgo(timestamp) {
+          return timeago().format(timestamp)          
+        }
+      },
+      data: {
+        serach: '',
+        selected: [],
+        headers: [
+          { text: 'Name', value: 'name' },
+          { text: 'Serial#', value: 'serial' },
+          { text: 'Port', value: 'port' },
+          { text: 'Algorithm', value: 'algorithm' },
+          { text: 'Prameters', value: 'parameters' },
+          { text: 'Values', value: 'values' },
+          { text: 'State', value: 'state' },
+          { text: 'When', value: 'when' },
+        ],
+        serials: [
+          'cm3pv2fj',
+          'cm4p7p9d',
+          'cmxbj6yk',
+          'cmyunqwh',
+          'cn3wq892',
+          'cn6aeqc7',
+          'cn7zwa36',
+          'cnbmup7z',
+          'cnecvq4p',
+          'cnhfktwa',
+          'cnkrwth8',
+          'cnr8up7e',
+          'cnrekrs5',
+          'cnrtg2y4',
+          'cnsvub4y',
+          'cp3zc8kr',
+          'cp7fajjn',
+          'cpa2tmn5',
+          'cpf4y8v3',
+          'cpg6yetm',
+          'cpn64esn',
+          'cpqg8zw8',
+          'cpx26xgp',
+          'cpyvkvxd',
+          'cq3anf5m',
+          'cq3yapfy',
+          'cq67aqny',
+          'cq78tksk',
+          'cq7sk7ew',
+          'cqahfrnv',
+          'cqbjzvgj',
+          'cqfmm7uj',
+          'cqknst2f',
+          'cqpb9zhn',
+          'cqr4w39u',
+          'cquwp9tz',
+          'cqvw7j9z',
+          'cqzcus5u',
+          'cr2e849h',
+          'cr39ejws',
+          'cr882pja',
+          'crbm8cwv',
+          'crestzbd',
+          'crgzg2mt',
+          'crj8dqnh',
+          'crm8qh7t',
+          'crr2gpgb',
+          'crrftqs4',
+          'cru7e2u6',
+          'crud886h',
+          'crzzxy5b',
+          'csdn9ywf',
+          'csfw43ht',
+          'csjbartm',
+          'csmw2rna',
+          'csqjxwnt',
+        ],
+        ports: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'],
+        algorithms: [
+          'Cycling Appliance',
+          'Appliance Light',
+          'Inactive Appliance',
+        ],
+        newItem: {
+          name: '',
+          serial: '',
+          port: '',
+          algorithm: '',
+          values: '',
+        },
+      },
+      computed: {
+        parameters() {
+          switch (this.newItem.algorithm) {
+            case 'Cycling Appliance':
+              return '(a) power threshold, (b) debounce duration, (c) cycle duration'
+            case 'Appliance Light':
+              return '(a) power threshold low, (b) power threshold high, (c) debounce duration'
+            case 'Inactive Appliance':
+              return '(a) power threshold, (b) debounce duration, (c) cycle duration'
+            default:
+              return 'Select an algorithm'
+          }
+        },
+        validated() {
+          return Object.keys(this.newItem).every(k => Boolean(this.newItem[k])) && this.uniqueName
+        },
+        uniqueName() {
+          return this.items.every(a => a.name !== this.newItem.name)
+        }
+      }
+    })
+  </script>
+</body>
+
+</html>
