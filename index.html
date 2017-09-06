@@ -36,6 +36,7 @@
                 <td class="text-xs-right">{{ props.item.algorithm }}</td>
                 <td class="text-xs-right">{{ props.item.parameters }}</td>
                 <td class="text-xs-right">{{ props.item.values }}</td>
+                <td class="text-xs-right">{{ props.item.phoneNumber }}</td>
                 <td class="text-xs-right">{{ props.item.events && props.item.events[props.item.events.length - 1].state }}</td>
                 <td class="text-xs-right">{{ props.item.events && getTimeAgo(props.item.events[props.item.events.length - 1].timestamp) }}</td>
               </template>
@@ -102,6 +103,15 @@
                               v-model="newItem.values"
                               :rules="[() => newItem.values && newItem.values.length > 0 || 'Please enter values']"></v-text-field>
               </v-flex>
+              <v-flex xs3>
+                <v-subheader>Phone Number</v-subheader>
+              </v-flex>
+              <v-flex xs9>
+                <v-text-field name="value"
+                              label="Enter a phone number e.g. +10003339999"
+                              v-model="newItem.phoneNumber"
+                              :rules="[() => /\+[0-9]{11}/.test(newItem.phoneNumber) || 'Invalid format']"></v-text-field>
+              </v-flex>
             </v-layout>
           </template>
           <!-- Buttons -->
@@ -144,6 +154,7 @@
           this.newItem.port = ''
           this.newItem.algorithm = ''
           this.newItem.values = ''
+          this.newItem.phoneNumber = ''
         },
         deleteAnalytics() {
           this.selected.forEach(function(analytic) {
@@ -165,6 +176,7 @@
           { text: 'Algorithm', value: 'algorithm' },
           { text: 'Prameters', value: 'parameters' },
           { text: 'Values', value: 'values' },
+          { text: 'PhoneNumber', value: 'phoneNumber' },
           { text: 'State', value: 'state' },
           { text: 'When', value: 'when' },
         ],
@@ -238,6 +250,7 @@
           port: '',
           algorithm: '',
           values: '',
+          phoneNumber: '',
         },
       },
       computed: {
